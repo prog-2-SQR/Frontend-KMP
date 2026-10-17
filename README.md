@@ -1,3 +1,10 @@
+<!-- calidad:inicio -->
+![Calidad](https://img.shields.io/badge/Calidad-36%2F100-orange) ![Aprobar](https://img.shields.io/badge/Aprobar-no-red) ![Destacar](https://img.shields.io/badge/Destacar-no-lightgrey) ![Build](https://img.shields.io/badge/Build-no%20compila-red) ![Duplicación](https://img.shields.io/badge/Duplicaci%C3%B3n-6.6%25-orange) ![%POO](https://img.shields.io/badge/%25POO-23%25-red) ![Sueltas](https://img.shields.io/badge/Sueltas-0-green) ![D1](https://img.shields.io/badge/D1-19-red) ![D3](https://img.shields.io/badge/D3-40-orange) ![D5](https://img.shields.io/badge/D5-95-green) ![D6](https://img.shields.io/badge/D6-3-red) ![D7](https://img.shields.io/badge/D7-62-yellow)
+
+**Calidad (heurístico, 7 dimensiones):** índice **36/100** · build **no compila** · aprobar **no (4/11)** · destacar **no**
+Detalle completo en [`docs/EVALUACION.md`](docs/EVALUACION.md).
+<!-- calidad:fin -->
+
 # Frontend-KMP
 
 [![CI](https://github.com/prog-2-SQR/Frontend-KMP/actions/workflows/ci.yml/badge.svg)](https://github.com/prog-2-SQR/Frontend-KMP/actions/workflows/ci.yml)
