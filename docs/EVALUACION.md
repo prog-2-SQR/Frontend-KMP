@@ -9,16 +9,16 @@
 
 | Aspecto | Resultado |
 |---|---|
-| Índice de calidad | **36/100** |
+| Índice de calidad | **35/100** |
 | Tipo de repositorio | `app-kmp` |
-| Build (`mvnw verify` / `gradlew check`) | no compila |
-| Código (LOC) | 275 |
-| Archivos de código | 12 |
-| Clases | 6 |
-| Código dentro de clases (%POO) | 23% |
+| Build (`mvnw verify` / `gradlew check`) | OK |
+| Código (LOC) | 473 |
+| Archivos de código | 18 |
+| Clases | 12 |
+| Código dentro de clases (%POO) | 41% |
 | Funciones fuera de clases | 0 |
-| Duplicación | 6.6% |
-| Tope duro aplicado a D1 | `POO_BAJO` → D1 ≤ 60 |
+| Duplicación | 16.4% |
+| Tope duro aplicado a D1 | `DUP>=15%` → D1 ≤ 50 |
 
 > Este informe **describe** lo que el análisis midió con los criterios ya establecidos de la materia. No es una nota.
 
@@ -28,10 +28,10 @@ Criterios de la cátedra (`CRITERIOS-CALIDAD.md`): **Aprobar** se juega con el p
 
 | Semáforo | Resultado |
 |---|---|
-| Aprobar (`estandar`) | **no cumple** — 4/11 |
+| Aprobar (`estandar`) | **no cumple** — 5/11 |
 | Destacar (`exigente`) | **no cumple** — 3/11 |
 
-**Para aprobar, falta cumplir:** POO; MVVM; Duplicación
+**Para aprobar, falta cumplir:** MVVM; Duplicación
 
 **Para destacar, falta cumplir:** SOLID; POO; MVVM; Duplicación
 
@@ -49,19 +49,19 @@ Cada dimensión indica **qué mide**, **por qué importa** y **tu resultado**. C
 
 | Dimensión | Peso | Puntaje |
 |:--|--:|--:|
-| **D1** Diseño OO, SOLID y patrones (20%) | 20% | 19 |
+| **D1** Diseño OO, SOLID y patrones (20%) | 20% | 11 |
 | **D2** Arquitectura hexagonal — backend (15%) | 15% | N/A |
 | **D3** Frontend KMP: MVVM y buenas prácticas (10%) | 10% | 40 |
 | **D4** Integración y contrato (10%) | 10% | N/A |
 | **D5** Seguridad y robustez (10%) | 10% | 95 |
-| **D6** Pruebas y cobertura (20%) | 20% | 3 |
+| **D6** Pruebas y cobertura (20%) | 20% | 7 |
 | **D7** Proceso y entrega (15%) | 15% | 62 |
 
 ### D1. Diseño OO, SOLID y patrones (20%)
 
 - **Qué mide:** Métricas orientadas a objetos (clases, métodos, campos, cohesión, acoplamiento, herencia) y proxies de SOLID, más patrones de diseño.
 - **Por qué importa:** El eje de la materia es el buen uso de la POO y su arquitectura: un diseño con clases claras y poco acopladas es más fácil de entender, probar y cambiar.
-- **Tu resultado:** **19/100**
+- **Tu resultado:** **11/100**
 - **Para investigar la causa:**
     - ¿Se pensó el modelo de clases antes de codificar o se agrupó después?
     - ¿Qué clases concentran muchas responsabilidades a la vez?
@@ -87,7 +87,7 @@ Cada dimensión indica **qué mide**, **por qué importa** y **tu resultado**. C
 
 - **Qué mide:** Cantidad y resultado de pruebas y cobertura de línea (JaCoCo/Kover, Surefire/Failsafe) cuando hay build.
 - **Por qué importa:** Las pruebas son la red de seguridad para refactorizar e integrar; la cobertura acota las zonas sin verificar.
-- **Tu resultado:** **3/100**
+- **Tu resultado:** **7/100**
 - **Para investigar la causa:**
     - ¿Qué partes del sistema no tienen pruebas?
     - ¿Las pruebas cubren caminos de error o solo el caso feliz?
@@ -103,27 +103,38 @@ Cada dimensión indica **qué mide**, **por qué importa** y **tu resultado**. C
 
 El análisis encontró las siguientes señales (archivo, sin número de línea a propósito):
 
-**SRP/responsabilidad** (2)
+**SRP/responsabilidad** (3)
 - clase 'AppColors' grande (LOC=18, métodos=0, campos=8) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/theme/AppColors.kt`
 - clase 'AppColors' sin métodos (8 campos): solo datos — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/theme/AppColors.kt`
+- clase 'AppDestination' sin métodos (4 campos): solo datos — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/navigation/AppDestination.kt`
 
-**DIP/concretos** (2)
+**DIP/concretos** (8)
+- clase 'AppDestination' muy acoplada (CBO=9) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/navigation/AppDestination.kt`
+- clase 'AppDestination' instancia 4 concretos (CBO=9) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/navigation/AppDestination.kt`
 - clase 'HomeScreen' muy acoplada (CBO=12) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/HomeScreen.kt`
 - clase 'HomeScreen' instancia 5 concretos (CBO=12) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/HomeScreen.kt`
+- clase 'SettingsScreen' muy acoplada (CBO=13) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/SettingsScreen.kt`
+- clase 'SettingsScreen' instancia 6 concretos (CBO=13) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/SettingsScreen.kt`
+- clase 'MainScreen' muy acoplada (CBO=14) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/MainScreen.kt`
+- clase 'MainScreen' instancia 11 concretos (CBO=14) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/MainScreen.kt`
+
+**POO** (2)
+- clase 'AppDestination' con 4 campos públicos (encapsulación) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/navigation/AppDestination.kt`
+- clase 'MainScreen' con 7 campos públicos (encapsulación) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/MainScreen.kt`
 
 **duplicación** (1)
-- duplicación de bloques: 6.6% del código
+- duplicación de bloques: 16.3% del código
 
 ## 6. Evolución por commit
 
-Métricas calculadas sobre el estado de `main` en **cada commit** (3 commits con trabajo), del primero al último. La calidad usa el perfil `exigente`; el aporte de código lo mide RepoSense. El índice puede **bajar** al crecer el proyecto: se acumulan señales.
+Métricas calculadas sobre el estado de `main` en **cada commit** (4 commits con trabajo), del primero al último. La calidad usa el perfil `exigente`; el aporte de código lo mide RepoSense. El índice puede **bajar** al crecer el proyecto: se acumulan señales.
 
 ```mermaid
 xychart-beta
     title "Índice de calidad a lo largo de los commits"
-    x-axis ["59f6b75", "30ec9a9", "0a54a9d"]
+    x-axis ["59f6b75", "30ec9a9", "0a54a9d", "43b606c"]
     y-axis "Índice" 0 --> 100
-    line [0, 15, 36]
+    line [0, 15, 36, 35]
 ```
 
 | # | Fecha | Commit | Autor | LOC | Índice | %POO | Duplic. | Sueltas |
@@ -131,6 +142,7 @@ xychart-beta
 | 1 | 2026-09-10 | `59f6b75` | Ing. Daniel Quinteros | 0 | 0 | 0% | 0.0% | 0 |
 | 2 | 2026-09-10 | `30ec9a9` | Ing. Daniel Quinteros | 0 | 15 | 0% | 0.0% | 0 |
 | 3 | 2026-10-16 | `0a54a9d` | Santiago Quiroga Rivarossa | 275 | 36 | 23% | 6.6% | 0 |
+| 4 | 2026-10-18 | `43b606c` | Santiago Quiroga Rivarossa | 473 | 35 | 41% | 16.4% | 0 |
 
 ---
 _Informe generado por la cátedra. Las dimensiones y umbrales corresponden a `calidad.py` (perfil `exigente`); el semáforo, a `CRITERIOS-CALIDAD.md`. La documentación del repositorio no se evalúa. Ante dudas, revisá el archivo señalado._
