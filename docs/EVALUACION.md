@@ -3,13 +3,13 @@
 
 > Documento **generado automáticamente** por la cátedra de Programación II (UM): RepoSense + análisis de calidad de **7 dimensiones**. **No editar a mano**: se regenera en cada evaluación.
 > Rama evaluada: `main`. Análisis **heurístico** (regex + métricas) + build: es una criba para orientar la revisión, **no una nota**. La **documentación** del repositorio no se evalúa.
-> Generado: 2026-10-17.
+> Generado: 2026-10-19.
 
 ## 1. Veredicto
 
 | Aspecto | Resultado |
 |---|---|
-| Índice de calidad | **35/100** |
+| Índice de calidad | **36/100** |
 | Tipo de repositorio | `app-kmp` |
 | Build (`mvnw verify` / `gradlew check`) | OK |
 | Código (LOC) | 473 |
@@ -17,8 +17,10 @@
 | Clases | 12 |
 | Código dentro de clases (%POO) | 41% |
 | Funciones fuera de clases | 0 |
-| Duplicación | 16.4% |
-| Tope duro aplicado a D1 | `DUP>=15%` → D1 ≤ 50 |
+| Duplicación (puerta) | 5.3% |
+| Duplicación lógica | 5.4% |
+| Duplicación de boilerplate | 0.0% |
+| Tope duro aplicado a D1 | `POO_BAJO` → D1 ≤ 60 |
 
 > Este informe **describe** lo que el análisis midió con los criterios ya establecidos de la materia. No es una nota.
 
@@ -39,7 +41,7 @@ Criterios de la cátedra (`CRITERIOS-CALIDAD.md`): **Aprobar** se juega con el p
 
 | Autor | Commits | Código (LOC) | Tests (LOC) | Docs (LOC) | Días activos | % del código |
 |---|---:|---:|---:|---:|---:|---:|
-| Santiago Quiroga Rivarossa | 6 | 315 | 0 | 84 | 2 | 100% |
+| Santiago Quiroga Rivarossa | 9 | 536 | 0 | 84 | 3 | 100% |
 
 > _El LOC de autoría lo calcula RepoSense sobre el historial y puede diferir del LOC de código del análisis (que mira el estado de `main`)._
 
@@ -49,7 +51,7 @@ Cada dimensión indica **qué mide**, **por qué importa** y **tu resultado**. C
 
 | Dimensión | Peso | Puntaje |
 |:--|--:|--:|
-| **D1** Diseño OO, SOLID y patrones (20%) | 20% | 11 |
+| **D1** Diseño OO, SOLID y patrones (20%) | 20% | 14 |
 | **D2** Arquitectura hexagonal — backend (15%) | 15% | N/A |
 | **D3** Frontend KMP: MVVM y buenas prácticas (10%) | 10% | 40 |
 | **D4** Integración y contrato (10%) | 10% | N/A |
@@ -61,7 +63,7 @@ Cada dimensión indica **qué mide**, **por qué importa** y **tu resultado**. C
 
 - **Qué mide:** Métricas orientadas a objetos (clases, métodos, campos, cohesión, acoplamiento, herencia) y proxies de SOLID, más patrones de diseño.
 - **Por qué importa:** El eje de la materia es el buen uso de la POO y su arquitectura: un diseño con clases claras y poco acopladas es más fácil de entender, probar y cambiar.
-- **Tu resultado:** **11/100**
+- **Tu resultado:** **14/100**
 - **Para investigar la causa:**
     - ¿Se pensó el modelo de clases antes de codificar o se agrupó después?
     - ¿Qué clases concentran muchas responsabilidades a la vez?
@@ -122,8 +124,10 @@ El análisis encontró las siguientes señales (archivo, sin número de línea a
 - clase 'AppDestination' con 4 campos públicos (encapsulación) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/navigation/AppDestination.kt`
 - clase 'MainScreen' con 7 campos públicos (encapsulación) — `shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/ui/screens/MainScreen.kt`
 
-**duplicación** (1)
-- duplicación de bloques: 16.3% del código
+**duplicación** (3)
+- duplicación lógica: 5.3% · boilerplate: 0.0%
+- bloque de 8 líneas repetido 2 veces en settings.gradle.kts:5, settings.gradle.kts:19 — `settings.gradle.kts`
+- bloque de 8 líneas repetido 2 veces en settings.gradle.kts:4, settings.gradle.kts:18 — `settings.gradle.kts`
 
 ## 6. Evolución por commit
 
@@ -134,15 +138,15 @@ xychart-beta
     title "Índice de calidad a lo largo de los commits"
     x-axis ["59f6b75", "30ec9a9", "0a54a9d", "43b606c"]
     y-axis "Índice" 0 --> 100
-    line [0, 15, 36, 35]
+    line [0, 15, 36, 36]
 ```
 
 | # | Fecha | Commit | Autor | LOC | Índice | %POO | Duplic. | Sueltas |
 |---|---|---|---|---:|---:|---:|---:|---:|
 | 1 | 2026-09-10 | `59f6b75` | Ing. Daniel Quinteros | 0 | 0 | 0% | 0.0% | 0 |
 | 2 | 2026-09-10 | `30ec9a9` | Ing. Daniel Quinteros | 0 | 15 | 0% | 0.0% | 0 |
-| 3 | 2026-10-16 | `0a54a9d` | Santiago Quiroga Rivarossa | 275 | 36 | 23% | 6.6% | 0 |
-| 4 | 2026-10-18 | `43b606c` | Santiago Quiroga Rivarossa | 473 | 35 | 41% | 16.4% | 0 |
+| 3 | 2026-10-16 | `0a54a9d` | Santiago Quiroga Rivarossa | 275 | 36 | 23% | 8.4% | 0 |
+| 4 | 2026-10-18 | `43b606c` | Santiago Quiroga Rivarossa | 473 | 36 | 41% | 5.3% | 0 |
 
 ---
 _Informe generado por la cátedra. Las dimensiones y umbrales corresponden a `calidad.py` (perfil `exigente`); el semáforo, a `CRITERIOS-CALIDAD.md`. La documentación del repositorio no se evalúa. Ante dudas, revisá el archivo señalado._
