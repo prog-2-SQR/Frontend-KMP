@@ -1,7 +1,12 @@
 package ar.edu.um.prog2.quiroga.turnosapp.ui.screens
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -24,22 +29,30 @@ class AuthScreen {
         val loginScreen = remember { LoginScreen() }
         val registerScreen = remember { RegisterScreen() }
 
-        NavHost(navController = navController, startDestination = AuthDestination.start.route) {
-            composable(AuthDestination.Login.route) {
-                val loginViewModel = viewModel { LoginViewModel(authRepository) }
-                loginScreen.Content(
-                    viewModel = loginViewModel,
-                    onLoggedIn = onLoggedIn,
-                    onGoToRegister = { navController.navigate(AuthDestination.Register.route) },
-                )
-            }
-            composable(AuthDestination.Register.route) {
-                val registerViewModel = viewModel { RegisterViewModel(authRepository) }
-                registerScreen.Content(
-                    viewModel = registerViewModel,
-                    onRegistered = { navController.popBackStack() },
-                    onGoToLogin = { navController.popBackStack() },
-                )
+        // La app dibuja de borde a borde (enableEdgeToEdge): el Scaffold deja libre la barra de estado, la cámara
+        // y el teclado (safeDrawing), así el formulario nunca queda tapado. Las pestañas ya lo tienen por el de MainScreen.
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = AuthDestination.start.route,
+                modifier = Modifier.padding(innerPadding),
+            ) {
+                composable(AuthDestination.Login.route) {
+                    val loginViewModel = viewModel { LoginViewModel(authRepository) }
+                    loginScreen.Content(
+                        viewModel = loginViewModel,
+                        onLoggedIn = onLoggedIn,
+                        onGoToRegister = { navController.navigate(AuthDestination.Register.route) },
+                    )
+                }
+                composable(AuthDestination.Register.route) {
+                    val registerViewModel = viewModel { RegisterViewModel(authRepository) }
+                    registerScreen.Content(
+                        viewModel = registerViewModel,
+                        onRegistered = { navController.popBackStack() },
+                        onGoToLogin = { navController.popBackStack() },
+                    )
+                }
             }
         }
     }
