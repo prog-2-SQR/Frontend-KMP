@@ -15,7 +15,9 @@ Permite a los usuarios finales registrarse, buscar profesionales y reservar turn
 
 ## Estado
 
-Esqueleto inicial: proyecto generado con el KMP Wizard (solo Android), con tema claro/oscuro y pantalla de inicio. Las pantallas de registro, búsqueda y reservas se incorporan en las próximas issues (milestone M8).
+- Registro e inicio de sesión contra Backend-Turnos (JWT).
+- Búsqueda de profesionales contra Backend-Catalogo: por nombre, categoría, día de atención y solo habilitados, con paginación.
+- Pendiente (milestone M8): disponibilidad, reserva, mis reservas y cierre de sesión.
 
 ## Requisitos
 
@@ -45,6 +47,16 @@ No hace falta instalar Gradle: el wrapper (`./gradlew`) descarga la versión cor
 
 En Windows, usar `gradlew.bat` en lugar de `./gradlew`.
 
+### Backends
+
+La app usa los dos servicios ([`ApiConfig`](shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/data/remote/ApiConfig.kt)): **Turnos** en el puerto 8081 (cuentas y turnos) y **Catálogo** en el 8080 (búsqueda de profesionales). Desde el emulador, la PC se ve como `10.0.2.2`. Los dos tienen que estar levantados y escuchando en IPv4; si corren en WSL:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Djava.net.preferIPv4Stack=true"
+```
+
+El JWT que devuelve Turnos al iniciar sesión sirve también para el catálogo: los dos servicios comparten el secreto `JWT_BASE64_SECRET`.
+
 ## Tests
 
 ```bash
@@ -65,11 +77,17 @@ En Windows, usar `gradlew.bat` en lugar de `./gradlew`.
 Paquetes de `commonMain` (`ar.edu.um.prog2.quiroga.turnosapp`):
 
 ```
-ui/theme/      tema de Material 3 (colores claro y oscuro)
-ui/screens/    pantallas, como clases con Content()
+ui/theme/          tema de Material 3 (colores claro y oscuro)
+ui/screens/        pantallas, como clases con Content(): solo dibujan el estado del ViewModel
+ui/components/     piezas reutilizables (campo de formulario, botón, filtro desplegable, barra inferior)
+ui/navigation/     destinos de la navegación (Navigation Compose)
+viewmodel/         un ViewModel por pantalla, con su estado en un StateFlow
+data/remote/       llamadas HTTP con Ktor y sus DTO
+data/repository/   interfaces que usan los ViewModels y sus implementaciones con Ktor
+domain/            modelo de la app y reglas de validación
 ```
 
-A medida que avance el proyecto se suman `ui/navigation`, `ui/components`, `viewmodel/`, `data/` y `domain/` (arquitectura MVVM).
+Arquitectura MVVM: la pantalla observa el estado del ViewModel; el ViewModel pide los datos a un repositorio; solo el repositorio sabe de HTTP.
 
 Las dependencias se declaran únicamente en el version catalog: [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
 
