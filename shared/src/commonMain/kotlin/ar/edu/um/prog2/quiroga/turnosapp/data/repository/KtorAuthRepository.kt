@@ -7,7 +7,6 @@ import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ProblemDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.RegisterRequestDto
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AuthSession
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.Registration
-import kotlinx.coroutines.CancellationException
 
 /** Cuentas contra el backend de turnos. Traduce los codes del backend (anexo §13.1) a mensajes para el usuario. */
 class KtorAuthRepository(private val api: AuthApi) : AuthRepository {
@@ -29,18 +28,8 @@ class KtorAuthRepository(private val api: AuthApi) : AuthRepository {
         call { api.login(LoginRequestDto(username = username, password = password, rememberMe = rememberMe)) }
             .map { token -> AuthSession(login = username.lowercase(), token = token.idToken) }
 
-    // Sin conexión (backend apagado, timeout) también es un error para mostrar, no un cierre de la app.
     private suspend fun <T> call(request: suspend () -> ApiResult<T>): Result<T> =
-        try {
-            when (val result = request()) {
-                is ApiResult.Success -> Result.success(result.value)
-                is ApiResult.Failure -> Result.failure(AuthException(messageFor(result.problem)))
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Result.failure(AuthException(NO_CONNECTION))
-        }
+        callBackend(::messageFor, NO_CONNECTION, ::AuthException, request)
 
     private fun messageFor(problem: ProblemDto): String =
         MESSAGES[problem.code] ?: if (problem.status == 401) MESSAGES.getValue("BAD_CREDENTIALS") else GENERIC

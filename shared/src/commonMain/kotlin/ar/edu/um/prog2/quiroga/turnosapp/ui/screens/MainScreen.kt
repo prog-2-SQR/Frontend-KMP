@@ -6,13 +6,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import ar.edu.um.prog2.quiroga.turnosapp.data.repository.ProfessionalRepository
 import ar.edu.um.prog2.quiroga.turnosapp.ui.components.AppBottomBar
 import ar.edu.um.prog2.quiroga.turnosapp.ui.navigation.AppDestination
+import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.SearchViewModel
 
 /** Contenedor principal: barra inferior y el área donde se muestra la pestaña elegida. */
 class MainScreen {
@@ -21,6 +24,7 @@ class MainScreen {
     fun Content(
         darkTheme: Boolean,
         onDarkThemeChange: (Boolean) -> Unit,
+        professionalRepository: ProfessionalRepository,
     ) {
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
@@ -46,7 +50,10 @@ class MainScreen {
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable(AppDestination.Home.route) { homeScreen.Content() }
-                composable(AppDestination.Search.route) { searchScreen.Content() }
+                composable(AppDestination.Search.route) {
+                    val searchViewModel = viewModel { SearchViewModel(professionalRepository) }
+                    searchScreen.Content(viewModel = searchViewModel)
+                }
                 composable(AppDestination.Settings.route) {
                     settingsScreen.Content(darkTheme = darkTheme, onDarkThemeChange = onDarkThemeChange)
                 }
