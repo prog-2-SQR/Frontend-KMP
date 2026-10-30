@@ -1,5 +1,6 @@
 package ar.edu.um.prog2.quiroga.turnosapp.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,10 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,7 +41,7 @@ import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.SearchViewModel
 class SearchScreen {
 
     @Composable
-    fun Content(viewModel: SearchViewModel, modifier: Modifier = Modifier) {
+    fun Content(viewModel: SearchViewModel, onProfessionalSelected: (Professional) -> Unit, modifier: Modifier = Modifier) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
 
         Column(
@@ -48,7 +52,7 @@ class SearchScreen {
         ) {
             Text(text = "Buscar profesionales", style = MaterialTheme.typography.headlineSmall)
             Filters(state, viewModel)
-            Results(state)
+            Results(state, onProfessionalSelected)
             Pagination(state, viewModel)
         }
     }
@@ -93,7 +97,7 @@ class SearchScreen {
 
     // ColumnScope: la lista ocupa el espacio que dejan los filtros y la paginación (weight).
     @Composable
-    private fun ColumnScope.Results(state: SearchUiState) {
+    private fun ColumnScope.Results(state: SearchUiState, onProfessionalSelected: (Professional) -> Unit) {
         val area = Modifier.fillMaxWidth().weight(1f)
         when {
             state.isLoading -> Box(area, contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -101,21 +105,27 @@ class SearchScreen {
             state.showsNoResults -> Text(text = "No hay profesionales con esos filtros.", modifier = area)
             else -> LazyColumn(modifier = area) {
                 items(state.professionals, key = Professional::id) { professional ->
-                    ProfessionalItem(professional, state.categoryName(professional.categoryId))
+                    ProfessionalItem(professional, state.categoryName(professional.categoryId), onProfessionalSelected)
                     HorizontalDivider()
                 }
             }
         }
     }
 
+    // Solo un profesional habilitado lleva a sus turnos: uno deshabilitado se ve, pero no se puede reservar.
     @Composable
-    private fun ProfessionalItem(professional: Professional, categoryName: String?) {
+    private fun ProfessionalItem(professional: Professional, categoryName: String?, onSelected: (Professional) -> Unit) {
         ListItem(
             headlineContent = { Text(professional.fullName) },
             supportingContent = categoryName?.let { { Text(it) } },
-            trailingContent = if (professional.enabled) null else {
-                { Text(text = "Deshabilitado", color = MaterialTheme.colorScheme.error) }
+            trailingContent = {
+                if (professional.enabled) {
+                    Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Ver turnos")
+                } else {
+                    Text(text = "Deshabilitado", color = MaterialTheme.colorScheme.error)
+                }
             },
+            modifier = if (professional.enabled) Modifier.clickable { onSelected(professional) } else Modifier,
         )
     }
 

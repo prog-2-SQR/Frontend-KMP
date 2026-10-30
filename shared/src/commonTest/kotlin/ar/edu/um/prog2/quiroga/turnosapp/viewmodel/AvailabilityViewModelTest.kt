@@ -1,6 +1,7 @@
 package ar.edu.um.prog2.quiroga.turnosapp.viewmodel
 
 import ar.edu.um.prog2.quiroga.turnosapp.data.repository.AppointmentException
+import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AvailableSlot
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationStatus
 import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.FakeAppointmentRepository.Companion.NINE
 import kotlinx.coroutines.CompletableDeferred
@@ -10,6 +11,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -45,8 +47,8 @@ class AvailabilityViewModelTest {
 
         assertEquals(listOf(201L to today), repository.availabilityRequests)
         assertEquals(today, state.selectedDate)
-        assertEquals(AvailabilityViewModel.DAYS_SHOWN, state.days.size)
-        assertEquals(LocalDate(2026, 11, 12), state.days.last())
+        assertEquals(today, state.firstDate)
+        assertEquals(LocalDate(2026, 11, 28), state.lastDate)
         assertEquals(2, state.slots.size)
         assertFalse(state.isLoading)
     }
@@ -59,6 +61,29 @@ class AvailabilityViewModelTest {
 
         assertEquals(201L to monday, repository.availabilityRequests.last())
         assertEquals(monday, viewModel.uiState.value.selectedDate)
+    }
+
+    @Test
+    fun daysOutsideTheRangeOrTheSameDayAreIgnored() {
+        val viewModel = viewModel()
+
+        viewModel.onDateSelected(LocalDate(2026, 10, 29))
+        viewModel.onDateSelected(LocalDate(2026, 11, 29))
+        viewModel.onDateSelected(today)
+
+        assertEquals(1, repository.availabilityRequests.size)
+        assertEquals(today, viewModel.uiState.value.selectedDate)
+    }
+
+    @Test
+    fun slotsAreSplitIntoMorningAndAfternoon() {
+        val afternoon = AvailableSlot(LocalTime(13, 0), LocalTime(13, 30))
+        repository.availabilityResult = Result.success(listOf(NINE, afternoon))
+
+        val state = viewModel().uiState.value
+
+        assertEquals(listOf(NINE), state.morningSlots)
+        assertEquals(listOf(afternoon), state.afternoonSlots)
     }
 
     @Test

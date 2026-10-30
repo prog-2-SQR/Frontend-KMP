@@ -11,9 +11,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.ApiConfig
+import ar.edu.um.prog2.quiroga.turnosapp.data.remote.AppointmentApi
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.AuthApi
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.CatalogApi
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.HttpClientFactory
+import ar.edu.um.prog2.quiroga.turnosapp.data.repository.KtorAppointmentRepository
 import ar.edu.um.prog2.quiroga.turnosapp.data.repository.KtorAuthRepository
 import ar.edu.um.prog2.quiroga.turnosapp.data.repository.KtorProfessionalRepository
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AuthSession
@@ -38,14 +40,18 @@ fun App() {
             if (currentSession == null) {
                 authScreen.Content(authRepository = authRepository, onLoggedIn = { session = it })
             } else {
-                // El catálogo recibe el token de esta sesión; si la sesión cambia, se arma otro repositorio.
+                // El catálogo y Turnos reciben el token de esta sesión; si la sesión cambia, se arman otros repositorios.
                 val professionalRepository = remember(currentSession) {
                     KtorProfessionalRepository(CatalogApi(HttpClientFactory.create(ApiConfig.CATALOGO_BASE_URL)), currentSession.token)
+                }
+                val appointmentRepository = remember(currentSession) {
+                    KtorAppointmentRepository(AppointmentApi(HttpClientFactory.create(ApiConfig.TURNOS_BASE_URL)), currentSession.token)
                 }
                 mainScreen.Content(
                     darkTheme = darkTheme,
                     onDarkThemeChange = { darkTheme = it },
                     professionalRepository = professionalRepository,
+                    appointmentRepository = appointmentRepository,
                 )
             }
         }

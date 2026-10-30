@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
@@ -23,7 +24,8 @@ import kotlin.time.Clock
 /** Todo lo que muestra la pantalla de turnos de un profesional. La pantalla solo lo dibuja. */
 data class AvailabilityUiState(
     val professionalName: String,
-    val days: List<LocalDate>,
+    val firstDate: LocalDate,
+    val lastDate: LocalDate,
     val selectedDate: LocalDate,
     val slots: List<AvailableSlot> = emptyList(),
     val isLoading: Boolean = false,
@@ -32,6 +34,15 @@ data class AvailabilityUiState(
     val reservation: Reservation? = null,
 ) {
     val showsNoSlots: Boolean get() = !isLoading && errorMessage == null && slots.isEmpty()
+    val morningSlots: List<AvailableSlot> get() = slots.filter { it.startTime < AFTERNOON }
+    val afternoonSlots: List<AvailableSlot> get() = slots.filter { it.startTime >= AFTERNOON }
+
+    fun isSelectable(date: LocalDate): Boolean = date in firstDate..lastDate
+
+    private companion object {
+        /** Desde esta hora, un turno se muestra como de la tarde. */
+        val AFTERNOON = LocalTime(13, 0)
+    }
 }
 
 /** El diálogo para confirmar un turno. Si la cuenta no tiene nombre, también los pide (askPatientName). */
@@ -50,8 +61,8 @@ data class ConfirmationState(
 }
 
 /**
- * Turnos libres de un profesional y reserva. Muestra los próximos días (empieza por hoy), carga los turnos del día
- * elegido y, al confirmar uno, pide la reserva a Turnos. Con la reserva creada, la pantalla muestra su estado.
+ * Turnos libres de un profesional y reserva. Deja elegir un día entre hoy y los próximos DAYS_SHOWN, carga los turnos
+ * de ese día y, al confirmar uno, pide la reserva a Turnos. Con la reserva creada, la pantalla muestra su estado.
  */
 class AvailabilityViewModel(
     private val professionalId: Long,
@@ -60,9 +71,14 @@ class AvailabilityViewModel(
     today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
 ) : ViewModel() {
 
-    private val days = List(DAYS_SHOWN) { today.plus(DatePeriod(days = it)) }
-
-    private val _uiState = MutableStateFlow(AvailabilityUiState(professionalName, days, selectedDate = today))
+    private val _uiState = MutableStateFlow(
+        AvailabilityUiState(
+            professionalName = professionalName,
+            firstDate = today,
+            lastDate = today.plus(DatePeriod(days = DAYS_SHOWN - 1)),
+            selectedDate = today,
+        ),
+    )
     val uiState: StateFlow<AvailabilityUiState> = _uiState.asStateFlow()
 
     // La carga en curso: si el usuario cambia de día antes de que termine, se cancela para no mostrar turnos de otro día.
@@ -72,7 +88,10 @@ class AvailabilityViewModel(
         loadSlots()
     }
 
+    // Un día fuera del rango (pasado o demasiado lejos) o el mismo que ya está elegido no hace nada.
     fun onDateSelected(date: LocalDate) {
+        val state = _uiState.value
+        if (!state.isSelectable(date) || date == state.selectedDate) return
         _uiState.update { it.copy(selectedDate = date) }
         loadSlots()
     }
@@ -139,6 +158,6 @@ class AvailabilityViewModel(
 
     companion object {
         /** Cuántos días se ofrecen para elegir, empezando por hoy. */
-        const val DAYS_SHOWN = 14
+        const val DAYS_SHOWN = 30
     }
 }
