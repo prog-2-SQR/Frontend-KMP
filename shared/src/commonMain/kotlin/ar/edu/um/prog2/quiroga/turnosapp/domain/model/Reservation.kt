@@ -10,7 +10,12 @@ data class NewReservation(
     val startTime: LocalTime,
     val patientFirstName: String? = null,
     val patientLastName: String? = null,
-)
+) {
+    companion object {
+        /** La cátedra exige nombre y apellido del paciente de 2 a 100 caracteres (anexo §10). */
+        val PATIENT_NAME_LENGTH = 2..100
+    }
+}
 
 /** Un proceso de reserva tal como lo informa Turnos (GET/POST /api/reservations). */
 data class Reservation(
