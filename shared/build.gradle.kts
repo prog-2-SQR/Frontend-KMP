@@ -50,6 +50,7 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.compose.materialIconsCore)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.contentNegotiation)
             implementation(libs.ktor.serialization.kotlinxJson)

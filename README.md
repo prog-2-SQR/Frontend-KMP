@@ -17,7 +17,8 @@ Permite a los usuarios finales registrarse, buscar profesionales y reservar turn
 
 - Registro e inicio de sesión contra Backend-Turnos (JWT).
 - Búsqueda de profesionales contra Backend-Catalogo: por nombre, categoría, día de atención y solo habilitados, con paginación.
-- Pendiente (milestone M8): disponibilidad, reserva, mis reservas y cierre de sesión.
+- Turnos libres y reserva contra Backend-Turnos: tocando un profesional habilitado se abre un calendario (hoy y los próximos 30 días) con los turnos libres del día, separados en mañana y tarde. Al confirmar uno, Turnos pide el bloqueo temporal a la cátedra y lo confirma; la app muestra el estado de la reserva. Si la cuenta no tiene nombre y apellido, el diálogo de confirmación los pide.
+- Pendiente (milestone M8): pedir el teléfono y mostrar el resultado final, mis reservas y cierre de sesión.
 
 ## Requisitos
 
@@ -49,7 +50,7 @@ En Windows, usar `gradlew.bat` en lugar de `./gradlew`.
 
 ### Backends
 
-La app usa los dos servicios ([`ApiConfig`](shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/data/remote/ApiConfig.kt)): **Turnos** en el puerto 8081 (cuentas y turnos) y **Catálogo** en el 8080 (búsqueda de profesionales). Desde el emulador, la PC se ve como `10.0.2.2`. Los dos tienen que estar levantados y escuchando en IPv4; si corren en WSL:
+La app usa los dos servicios ([`ApiConfig`](shared/src/commonMain/kotlin/ar/edu/um/prog2/quiroga/turnosapp/data/remote/ApiConfig.kt)): **Turnos** en el puerto 8081 (cuentas, turnos libres y reservas) y **Catálogo** en el 8080 (búsqueda de profesionales). Desde el emulador, la PC se ve como `10.0.2.2`. Los dos tienen que estar levantados y escuchando en IPv4; si corren en WSL:
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Djava.net.preferIPv4Stack=true"
@@ -80,7 +81,8 @@ Paquetes de `commonMain` (`ar.edu.um.prog2.quiroga.turnosapp`):
 ui/theme/          tema de Material 3 (colores claro y oscuro)
 ui/screens/        pantallas, como clases con Content(): solo dibujan el estado del ViewModel
 ui/components/     piezas reutilizables (campo de formulario, botón, filtro desplegable, barra inferior)
-ui/navigation/     destinos de la navegación (Navigation Compose)
+ui/navigation/     destinos de la navegación (Navigation Compose); la pestaña Buscar es un grafo con la lista y los turnos
+ui/format/         textos de fechas y horas en castellano, y conversión de fechas para el calendario
 viewmodel/         un ViewModel por pantalla, con su estado en un StateFlow
 data/remote/       llamadas HTTP con Ktor y sus DTO
 data/repository/   interfaces que usan los ViewModels y sus implementaciones con Ktor
@@ -97,6 +99,7 @@ Las dependencias se declaran únicamente en el version catalog: [`gradle/libs.ve
 |---|---|
 | Kotlin | 2.4.20 |
 | Compose Multiplatform | 1.12.1 |
+| kotlinx-datetime | 0.8.0 |
 | Android Gradle Plugin | 9.1.1 |
 | Gradle (wrapper) | 9.5.1 |
 | JDK para Gradle | 21 |
