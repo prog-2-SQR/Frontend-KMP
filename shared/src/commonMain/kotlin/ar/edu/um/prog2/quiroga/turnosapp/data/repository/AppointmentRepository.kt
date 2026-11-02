@@ -3,14 +3,21 @@ package ar.edu.um.prog2.quiroga.turnosapp.data.repository
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AvailableSlot
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.NewReservation
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.Reservation
+import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationPage
 import kotlinx.datetime.LocalDate
 
-/** Turnos libres y reservas en el backend de turnos. El ViewModel depende de esta interfaz; los tests usan una falsa. */
+/** Turnos libres, reservas y teléfono en el backend de turnos. El ViewModel depende de esta interfaz; los tests usan una falsa. */
 interface AppointmentRepository {
 
     suspend fun availability(professionalId: Long, date: LocalDate): Result<List<AvailableSlot>>
 
     suspend fun reserve(reservation: NewReservation): Result<Reservation>
+
+    suspend fun reservation(id: String): Result<Reservation>
+
+    suspend fun myReservations(page: Int): Result<ReservationPage>
+
+    suspend fun submitPhone(reservationId: String, phoneNumber: String): Result<Reservation>
 }
 
 /**

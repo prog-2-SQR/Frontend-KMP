@@ -1,6 +1,7 @@
 package ar.edu.um.prog2.quiroga.turnosapp.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -14,6 +15,7 @@ enum class AppDestination(
 ) {
     Home(route = "home", label = "Inicio", icon = Icons.Filled.Home),
     Search(route = "search", label = "Buscar", icon = Icons.Filled.Search),
+    Reservations(route = "reservations", label = "Mis reservas", icon = Icons.Filled.DateRange),
     Settings(route = "settings", label = "Ajustes", icon = Icons.Filled.Settings);
 
     companion object {

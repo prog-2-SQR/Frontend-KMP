@@ -25,14 +25,35 @@ data class Reservation(
     val date: LocalDate,
     val startTime: LocalTime,
     val phoneRequested: Boolean,
-)
+    /** El texto con el que la cátedra pide el teléfono (anexo §15.4). */
+    val phoneRequestMessage: String? = null,
+    /** Por qué rechazó el último teléfono (anexo §15.7): se muestra al pedir otro. */
+    val phoneRejectionMessage: String? = null,
+) {
+    /** En curso: todavía puede terminar de cualquier forma. La app sigue consultando su estado. */
+    val isPending: Boolean get() = status.isPending
+}
+
+/** Una página de reservas propias. page empieza en 0, como en el backend. */
+data class ReservationPage(
+    val reservations: List<Reservation>,
+    val page: Int,
+    val totalPages: Int,
+) {
+    val hasPrevious: Boolean get() = page > 0
+    val hasNext: Boolean get() = page + 1 < totalPages
+
+    companion object {
+        val EMPTY = ReservationPage(reservations = emptyList(), page = 0, totalPages = 0)
+    }
+}
 
 /** Estados del proceso en Turnos, con el texto que ve el usuario. UNKNOWN: un estado nuevo que la app no conoce. */
-enum class ReservationStatus(val label: String) {
-    REQUESTED("Pedido enviado"),
-    HELD("Turno retenido"),
-    WAITING_FOR_PHONE("Reservado: falta confirmar tu teléfono"),
-    PHONE_SUBMITTED("Teléfono enviado, esperando la confirmación"),
+enum class ReservationStatus(val label: String, val isPending: Boolean = false) {
+    REQUESTED("Pedido enviado", isPending = true),
+    HELD("Turno retenido", isPending = true),
+    WAITING_FOR_PHONE("Reservado: falta confirmar tu teléfono", isPending = true),
+    PHONE_SUBMITTED("Teléfono enviado, esperando la confirmación", isPending = true),
     CONFIRMED("Turno confirmado"),
     FAILED("No se pudo reservar"),
     EXPIRED("La reserva venció"),

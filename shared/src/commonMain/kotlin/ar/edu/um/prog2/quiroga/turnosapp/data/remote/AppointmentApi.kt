@@ -2,7 +2,9 @@ package ar.edu.um.prog2.quiroga.turnosapp.data.remote
 
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.AvailabilityDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ReservationDto
+import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ReservationPageDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.StartReservationRequestDto
+import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.SubmitPhoneRequestDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.bearerAuth
@@ -12,7 +14,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kotlinx.datetime.LocalDate
 
-/** Llamadas HTTP a Turnos para ver turnos libres y reservar. Llevan el JWT de la sesión, que Turnos reenvía al catálogo. */
+/** Llamadas HTTP a Turnos: turnos libres, reservar, ver las reservas propias y mandar el teléfono. Llevan el JWT de la sesión, que Turnos reenvía al catálogo. */
 class AppointmentApi(private val client: HttpClient) {
 
     suspend fun availability(token: String, professionalId: Long, date: LocalDate): ApiResult<AvailabilityDto> =
@@ -26,5 +28,21 @@ class AppointmentApi(private val client: HttpClient) {
         client.post("/api/reservations") {
             bearerAuth(token)
             setBody(request)
+        }.toApiResult { it.body<ReservationDto>() }
+
+    suspend fun reservation(token: String, id: String): ApiResult<ReservationDto> =
+        client.get("/api/reservations/$id") { bearerAuth(token) }.toApiResult { it.body<ReservationDto>() }
+
+    suspend fun reservations(token: String, page: Int, size: Int): ApiResult<ReservationPageDto> =
+        client.get("/api/reservations") {
+            bearerAuth(token)
+            parameter("page", page)
+            parameter("size", size)
+        }.toApiResult { it.body<ReservationPageDto>() }
+
+    suspend fun submitPhone(token: String, id: String, phoneNumber: String): ApiResult<ReservationDto> =
+        client.post("/api/reservations/$id/phone") {
+            bearerAuth(token)
+            setBody(SubmitPhoneRequestDto(phoneNumber))
         }.toApiResult { it.body<ReservationDto>() }
 }

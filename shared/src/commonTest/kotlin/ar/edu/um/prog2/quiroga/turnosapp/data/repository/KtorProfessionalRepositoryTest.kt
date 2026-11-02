@@ -121,4 +121,17 @@ class KtorProfessionalRepositoryTest {
         assertTrue(result.isFailure)
         assertEquals(KtorProfessionalRepository.NO_CONNECTION, result.exceptionOrNull()?.message)
     }
+
+    @Test
+    fun aProfessionalIsFoundById() = runTest {
+        val repository = repository {
+            json(HttpStatusCode.OK, """{"id": 218, "categoryId": 101, "firstName": "Romina", "lastName": "Acosta", "enabled": true}""")
+        }
+
+        val professional = repository.professional(218).getOrThrow()
+
+        assertEquals("/api/professionals/218", lastRequest!!.url.encodedPath)
+        assertEquals("Bearer eyJ.token.firma", lastRequest!!.headers[HttpHeaders.Authorization])
+        assertEquals("Romina Acosta", professional.fullName)
+    }
 }
