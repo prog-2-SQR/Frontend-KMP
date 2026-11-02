@@ -21,7 +21,10 @@ import ar.edu.um.prog2.quiroga.turnosapp.data.repository.ProfessionalRepository
 import ar.edu.um.prog2.quiroga.turnosapp.ui.components.AppBottomBar
 import ar.edu.um.prog2.quiroga.turnosapp.ui.navigation.AppDestination
 import ar.edu.um.prog2.quiroga.turnosapp.ui.navigation.AvailabilityRoute
+import ar.edu.um.prog2.quiroga.turnosapp.ui.navigation.ReservationRoute
 import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.AvailabilityViewModel
+import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.MyReservationsViewModel
+import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.ReservationDetailViewModel
 import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.SearchViewModel
 
 /** Contenedor principal: barra inferior y el área donde se muestra la pestaña elegida. */
@@ -60,6 +63,7 @@ class MainScreen {
             ) {
                 composable(AppDestination.Home.route) { homeScreen.Content() }
                 searchGraph(navController, professionalRepository, appointmentRepository)
+                reservationsGraph(navController, professionalRepository, appointmentRepository)
                 composable(AppDestination.Settings.route) {
                     settingsScreen.Content(darkTheme = darkTheme, onDarkThemeChange = onDarkThemeChange)
                 }
@@ -93,7 +97,44 @@ class MainScreen {
                 val availabilityViewModel = viewModel {
                     AvailabilityViewModel(route.professionalId, route.professionalName, appointmentRepository)
                 }
-                availabilityScreen.Content(viewModel = availabilityViewModel, onBack = { navController.popBackStack() })
+                availabilityScreen.Content(
+                    viewModel = availabilityViewModel,
+                    onBack = { navController.popBackStack() },
+                    onOpenReservation = { reservation, professionalName ->
+                        navController.navigate(ReservationRoute(reservation.id, professionalName))
+                    },
+                )
+            }
+        }
+    }
+
+    /**
+     * La pestaña Mis reservas: la lista y el detalle de una reserva. Al detalle también se llega desde la reserva recién
+     * creada; en ese caso la barra inferior marca Mis reservas, porque el detalle está dentro de este grafo.
+     */
+    private fun NavGraphBuilder.reservationsGraph(
+        navController: NavHostController,
+        professionalRepository: ProfessionalRepository,
+        appointmentRepository: AppointmentRepository,
+    ) {
+        navigation(startDestination = RESERVATIONS_LIST_ROUTE, route = AppDestination.Reservations.route) {
+            composable(RESERVATIONS_LIST_ROUTE) {
+                val myReservationsScreen = remember { MyReservationsScreen() }
+                val myReservationsViewModel = viewModel { MyReservationsViewModel(appointmentRepository, professionalRepository) }
+                myReservationsScreen.Content(
+                    viewModel = myReservationsViewModel,
+                    onReservationSelected = { reservation, professionalName ->
+                        navController.navigate(ReservationRoute(reservation.id, professionalName))
+                    },
+                )
+            }
+            composable<ReservationRoute> { entry ->
+                val route = entry.toRoute<ReservationRoute>()
+                val detailScreen = remember { ReservationDetailScreen() }
+                val detailViewModel = viewModel {
+                    ReservationDetailViewModel(route.reservationId, route.professionalName, appointmentRepository)
+                }
+                detailScreen.Content(viewModel = detailViewModel, onBack = { navController.popBackStack() })
             }
         }
     }
@@ -109,5 +150,6 @@ class MainScreen {
 
     private companion object {
         const val SEARCH_LIST_ROUTE = "search/list"
+        const val RESERVATIONS_LIST_ROUTE = "reservations/list"
     }
 }

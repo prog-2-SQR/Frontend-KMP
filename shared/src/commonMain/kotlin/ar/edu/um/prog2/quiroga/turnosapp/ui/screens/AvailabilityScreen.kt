@@ -54,7 +54,12 @@ import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.ConfirmationState
 class AvailabilityScreen {
 
     @Composable
-    fun Content(viewModel: AvailabilityViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    fun Content(
+        viewModel: AvailabilityViewModel,
+        onBack: () -> Unit,
+        onOpenReservation: (Reservation, String) -> Unit,
+        modifier: Modifier = Modifier,
+    ) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
 
         // Toda la pantalla se desplaza: el calendario y los turnos de un día con muchos horarios entran igual.
@@ -71,7 +76,7 @@ class AvailabilityScreen {
                 Calendar(state, viewModel)
                 Slots(state, viewModel)
             } else {
-                ReservationResult(reservation, onBack)
+                ReservationResult(reservation, onBack, onOpen = { onOpenReservation(reservation, state.professionalName) })
             }
         }
         state.confirmation?.let { ConfirmationDialog(it, state, viewModel) }
@@ -185,7 +190,7 @@ class AvailabilityScreen {
     }
 
     @Composable
-    private fun ReservationResult(reservation: Reservation, onBack: () -> Unit) {
+    private fun ReservationResult(reservation: Reservation, onBack: () -> Unit, onOpen: () -> Unit) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(text = reservation.status.label, style = MaterialTheme.typography.titleMedium)
@@ -198,7 +203,9 @@ class AvailabilityScreen {
                 }
             }
         }
-        Button(onClick = onBack) { Text("Volver a la búsqueda") }
+        // El detalle sigue el estado y pide el teléfono cuando la cátedra lo solicita.
+        Button(onClick = onOpen) { Text("Ver mi reserva") }
+        TextButton(onClick = onBack) { Text("Volver a la búsqueda") }
     }
 
     private companion object {
