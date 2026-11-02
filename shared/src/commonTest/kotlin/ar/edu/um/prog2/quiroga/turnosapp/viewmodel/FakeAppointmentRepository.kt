@@ -70,5 +70,17 @@ class FakeAppointmentRepository : AppointmentRepository {
             startTime = reservation.startTime,
             phoneRequested = false,
         )
+
+        /** Una reserva del profesional 218 para el 3/11 a las 13:00, en el estado pedido. */
+        fun reservation(status: ReservationStatus, phoneRequested: Boolean = false, id: String = "proceso-1", professionalId: Long = 218) =
+            Reservation(
+                id = id,
+                status = status,
+                professionalId = professionalId,
+                date = LocalDate(2026, 11, 3),
+                startTime = LocalTime(13, 0),
+                phoneRequested = phoneRequested,
+                phoneRequestMessage = if (phoneRequested) "Ingrese un numero de telefono para continuar." else null,
+            )
     }
 }
