@@ -4,6 +4,7 @@ import ar.edu.um.prog2.quiroga.turnosapp.data.repository.AppointmentRepository
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AvailableSlot
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.NewReservation
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.Reservation
+import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationPage
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.datetime.LocalDate
@@ -31,6 +32,30 @@ class FakeAppointmentRepository : AppointmentRepository {
     override suspend fun reserve(reservation: NewReservation): Result<Reservation> {
         reservations += reservation
         return reserveResults.removeFirstOrNull() ?: Result.success(reservationFor(reservation))
+    }
+
+    // Detalle de una reserva: devuelve las configuradas en orden (la última se repite), para simular que cambia.
+    var reservationResults: MutableList<Result<Reservation>> = mutableListOf()
+    var myReservationsResult: Result<ReservationPage> = Result.success(ReservationPage.EMPTY)
+    var submitPhoneResult: Result<Reservation>? = null
+
+    val reservationRequests = mutableListOf<String>()
+    val myReservationsRequests = mutableListOf<Int>()
+    val submittedPhones = mutableListOf<Pair<String, String>>()
+
+    override suspend fun reservation(id: String): Result<Reservation> {
+        reservationRequests += id
+        return if (reservationResults.size > 1) reservationResults.removeFirst() else reservationResults.first()
+    }
+
+    override suspend fun myReservations(page: Int): Result<ReservationPage> {
+        myReservationsRequests += page
+        return myReservationsResult
+    }
+
+    override suspend fun submitPhone(reservationId: String, phoneNumber: String): Result<Reservation> {
+        submittedPhones += reservationId to phoneNumber
+        return submitPhoneResult ?: Result.success(reservationResults.last().getOrThrow().copy(status = ReservationStatus.PHONE_SUBMITTED, phoneRequested = false))
     }
 
     companion object {

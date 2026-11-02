@@ -26,6 +26,9 @@ class KtorProfessionalRepository(
             categories.filter(CategoryDto::enabled).map { Category(id = it.id, name = it.name) }.sortedBy(Category::name)
         }
 
+    override suspend fun professional(id: Long): Result<Professional> =
+        call { api.professional(token, id) }.map(::toProfessional)
+
     private suspend fun <T> call(request: suspend () -> ApiResult<T>): Result<T> =
         callBackend(::messageFor, NO_CONNECTION, ::CatalogException, request)
 

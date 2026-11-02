@@ -9,10 +9,12 @@ import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.StartReservationRequest
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AvailableSlot
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.NewReservation
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.Reservation
+import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationPage
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationStatus
+import ar.edu.um.prog2.quiroga.turnosapp.domain.validation.PhoneRules
 import kotlinx.datetime.LocalDate
 
-/** Turnos libres y reservas contra Turnos con el token de la sesión. Pasa los DTO al modelo y los errores a mensajes. */
+/** Turnos libres, reservas y teléfono contra Turnos con el token de la sesión. Pasa los DTO al modelo y los errores a mensajes. */
 class KtorAppointmentRepository(
     private val api: AppointmentApi,
     private val token: String,
@@ -23,6 +25,18 @@ class KtorAppointmentRepository(
 
     override suspend fun reserve(reservation: NewReservation): Result<Reservation> =
         call { api.startReservation(token, toRequest(reservation)) }.map(::toReservation)
+
+    override suspend fun reservation(id: String): Result<Reservation> =
+        call { api.reservation(token, id) }.map(::toReservation)
+
+    override suspend fun myReservations(page: Int): Result<ReservationPage> =
+        call { api.reservations(token, page, PAGE_SIZE) }.map { dto ->
+            ReservationPage(reservations = dto.content.map(::toReservation), page = dto.page, totalPages = dto.totalPages)
+        }
+
+    // Se manda tal como lo escribió el usuario: Turnos lo normaliza con la misma regla.
+    override suspend fun submitPhone(reservationId: String, phoneNumber: String): Result<Reservation> =
+        call { api.submitPhone(token, reservationId, phoneNumber.trim()) }.map(::toReservation)
 
     private suspend fun <T> call(request: suspend () -> ApiResult<T>): Result<T> =
         callBackend(::messageFor, NO_CONNECTION, ::errorFor, request)
@@ -51,9 +65,12 @@ class KtorAppointmentRepository(
         date = dto.date,
         startTime = dto.startTime,
         phoneRequested = dto.phoneRequested,
+        phoneRequestMessage = dto.phoneRequestMessage,
+        phoneRejectionMessage = dto.phoneRejectionMessage,
     )
 
     companion object {
+        const val PAGE_SIZE = 20
         const val NO_CONNECTION = "No se pudo conectar con el servidor de turnos. Probá de nuevo."
         const val SESSION_EXPIRED = "Tu sesión venció. Volvé a iniciar sesión."
         const val SLOT_TAKEN = "Ese turno ya no está libre. Elegí otro."
@@ -63,6 +80,8 @@ class KtorAppointmentRepository(
         const val PROFESSIONAL_NOT_FOUND = "No encontramos al profesional."
         const val INVALID_SLOT = "Ese día u horario no es válido."
         const val UNAVAILABLE = "El sistema de turnos no responde. Probá en un rato."
+        const val RESERVATION_NOT_FOUND = "No encontramos la reserva."
+        const val PHONE_NOT_REQUESTED = "La reserva ya no está esperando un teléfono."
         const val GENERIC = "Ocurrió un error, probá de nuevo"
 
         // Codes de Turnos: ReservationException, AvailabilityException y VALIDATION_ERROR del handler global.
@@ -81,6 +100,9 @@ class KtorAppointmentRepository(
             "CATALOG_UNAUTHORIZED" to SESSION_EXPIRED,
             "CATALOG_UNAVAILABLE" to UNAVAILABLE,
             "CATEDRA_UNAVAILABLE" to UNAVAILABLE,
+            "RESERVATION_NOT_FOUND" to RESERVATION_NOT_FOUND,
+            "PHONE_NOT_REQUESTED" to PHONE_NOT_REQUESTED,
+            "INVALID_PHONE_NUMBER" to PhoneRules.INVALID_PHONE,
         )
 
         private val STATUS_MESSAGES = mapOf(

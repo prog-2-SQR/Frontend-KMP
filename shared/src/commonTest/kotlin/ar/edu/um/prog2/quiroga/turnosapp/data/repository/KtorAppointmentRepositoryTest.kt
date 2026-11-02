@@ -4,6 +4,7 @@ import ar.edu.um.prog2.quiroga.turnosapp.data.remote.AppointmentApi
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.HttpClientFactory
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.NewReservation
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationStatus
+import ar.edu.um.prog2.quiroga.turnosapp.domain.validation.PhoneRules
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
@@ -187,5 +188,66 @@ class KtorAppointmentRepositoryTest {
         val result = repository.reserve(newReservation)
 
         assertEquals(KtorAppointmentRepository.NO_CONNECTION, result.exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun aReservationShowsThePhoneRequestAndTheRejection() = runTest {
+        val repository = repository {
+            json(HttpStatusCode.OK, waitingForPhone.replace("\"phoneRequested\": false",
+                "\"phoneRequested\": true, \"phoneRequestMessage\": \"Ingrese un numero\", \"phoneRejectionMessage\": \"No es valido\""))
+        }
+
+        val reservation = repository.reservation("7b6f2c1e-0000-4000-8000-000000000001").getOrThrow()
+
+        assertEquals("/api/reservations/7b6f2c1e-0000-4000-8000-000000000001", lastRequest!!.url.encodedPath)
+        assertEquals("Bearer eyJ.token.firma", lastRequest!!.headers[HttpHeaders.Authorization])
+        assertTrue(reservation.phoneRequested)
+        assertEquals("Ingrese un numero", reservation.phoneRequestMessage)
+        assertEquals("No es valido", reservation.phoneRejectionMessage)
+        assertTrue(reservation.isPending)
+    }
+
+    @Test
+    fun myReservationsComePagedFromTurnos() = runTest {
+        val repository = repository {
+            json(HttpStatusCode.OK, """{"content": [$waitingForPhone], "page": 1, "size": 20, "totalElements": 21, "totalPages": 2}""")
+        }
+
+        val page = repository.myReservations(1).getOrThrow()
+
+        assertEquals("/api/reservations", lastRequest!!.url.encodedPath)
+        assertEquals("1", lastRequest!!.url.parameters["page"])
+        assertEquals("20", lastRequest!!.url.parameters["size"])
+        assertEquals(1, page.reservations.size)
+        assertTrue(page.hasPrevious)
+        assertFalse(page.hasNext)
+    }
+
+    @Test
+    fun thePhoneIsSentToItsReservation() = runTest {
+        val repository = repository {
+            json(HttpStatusCode.Accepted, waitingForPhone.replace("WAITING_FOR_PHONE", "PHONE_SUBMITTED"))
+        }
+
+        val reservation = repository.submitPhone("7b6f2c1e", " +54 9 261 555-1234 ").getOrThrow()
+
+        assertEquals(HttpMethod.Post, lastRequest!!.method)
+        assertEquals("/api/reservations/7b6f2c1e/phone", lastRequest!!.url.encodedPath)
+        assertEquals("""{"phoneNumber":"+54 9 261 555-1234"}""", lastRequest!!.body.toByteArray().decodeToString())
+        assertEquals(ReservationStatus.PHONE_SUBMITTED, reservation.status)
+    }
+
+    @Test
+    fun phoneErrorsHaveTheirMessage() = runTest {
+        val cases = mapOf(
+            "INVALID_PHONE_NUMBER" to PhoneRules.INVALID_PHONE,
+            "PHONE_NOT_REQUESTED" to KtorAppointmentRepository.PHONE_NOT_REQUESTED,
+            "RESERVATION_NOT_FOUND" to KtorAppointmentRepository.RESERVATION_NOT_FOUND,
+        )
+        for ((code, message) in cases) {
+            val repository = repository { problem(HttpStatusCode.BadRequest, code) }
+
+            assertEquals(message, repository.submitPhone("7b6f2c1e", "123").exceptionOrNull()?.message, code)
+        }
     }
 }

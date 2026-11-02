@@ -26,6 +26,15 @@ class FakeProfessionalRepository : ProfessionalRepository {
 
     override suspend fun categories(): Result<List<Category>> = categoriesResult
 
+    // Por defecto, Ana Torres para cualquier id; professionalRequests anota cuáles se pidieron.
+    var professionalResult: (Long) -> Result<Professional> = { Result.success(ANA.copy(id = it)) }
+    val professionalRequests = mutableListOf<Long>()
+
+    override suspend fun professional(id: Long): Result<Professional> {
+        professionalRequests += id
+        return professionalResult(id)
+    }
+
     companion object {
         val ANA = Professional(id = 201, categoryId = 101, firstName = "Ana", lastName = "Torres", enabled = true)
 

@@ -1,6 +1,7 @@
 package ar.edu.um.prog2.quiroga.turnosapp.data.remote
 
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.CategoryDto
+import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ProfessionalDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ProfessionalPageDto
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ProfessionalFilters
 import io.ktor.client.HttpClient
@@ -26,4 +27,7 @@ class CatalogApi(private val client: HttpClient) {
 
     suspend fun categories(token: String): ApiResult<List<CategoryDto>> =
         client.get("/api/categories") { bearerAuth(token) }.toApiResult { it.body<List<CategoryDto>>() }
+
+    suspend fun professional(token: String, id: Long): ApiResult<ProfessionalDto> =
+        client.get("/api/professionals/$id") { bearerAuth(token) }.toApiResult { it.body<ProfessionalDto>() }
 }

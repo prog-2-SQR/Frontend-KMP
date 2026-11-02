@@ -39,4 +39,22 @@ data class ReservationDto(
     val date: LocalDate,
     val startTime: LocalTime,
     val phoneRequested: Boolean = false,
+    val phoneRequestMessage: String? = null,
+    val phoneRejectionMessage: String? = null,
+)
+
+/** Página de GET /api/reservations: {content, page, size, totalElements, totalPages}. */
+@Serializable
+data class ReservationPageDto(
+    val content: List<ReservationDto> = emptyList(),
+    val page: Int = 0,
+    val size: Int = 0,
+    val totalElements: Long = 0,
+    val totalPages: Int = 0,
+)
+
+/** Body de POST /api/reservations/{id}/phone. */
+@Serializable
+data class SubmitPhoneRequestDto(
+    val phoneNumber: String,
 )
