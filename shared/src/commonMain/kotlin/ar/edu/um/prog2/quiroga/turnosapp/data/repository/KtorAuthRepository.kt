@@ -1,5 +1,7 @@
 package ar.edu.um.prog2.quiroga.turnosapp.data.repository
 
+import ar.edu.um.prog2.quiroga.turnosapp.data.local.JwtExpiry
+import ar.edu.um.prog2.quiroga.turnosapp.data.local.SessionStore
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.ApiResult
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.AuthApi
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.LoginRequestDto
@@ -7,9 +9,17 @@ import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ProblemDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.RegisterRequestDto
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AuthSession
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.Registration
+import kotlin.time.Clock
 
-/** Cuentas contra el backend de turnos. Traduce los codes del backend (anexo §13.1) a mensajes para el usuario. */
-class KtorAuthRepository(private val api: AuthApi) : AuthRepository {
+/**
+ * Cuentas contra el backend de turnos. Traduce los codes del backend (anexo §13.1) a mensajes para el usuario, y guarda
+ * la sesión en el teléfono cuando el usuario marca "Recordarme".
+ */
+class KtorAuthRepository(
+    private val api: AuthApi,
+    private val sessionStore: SessionStore,
+    private val clock: Clock = Clock.System,
+) : AuthRepository {
 
     override suspend fun register(registration: Registration): Result<Unit> = call {
         api.register(
@@ -27,6 +37,18 @@ class KtorAuthRepository(private val api: AuthApi) : AuthRepository {
     override suspend fun login(username: String, password: String, rememberMe: Boolean): Result<AuthSession> =
         call { api.login(LoginRequestDto(username = username, password = password, rememberMe = rememberMe)) }
             .map { token -> AuthSession(login = username.lowercase(), token = token.idToken) }
+            .onSuccess { session -> if (rememberMe) sessionStore.save(session) else sessionStore.clear() }
+
+    // Una sesión vencida no se restaura: se borra y la app pide el login.
+    override fun savedSession(): AuthSession? {
+        val session = sessionStore.load() ?: return null
+        val expiresAt = JwtExpiry.of(session.token)
+        if (expiresAt != null && expiresAt > clock.now()) return session
+        sessionStore.clear()
+        return null
+    }
+
+    override fun logout() = sessionStore.clear()
 
     private suspend fun <T> call(request: suspend () -> ApiResult<T>): Result<T> =
         callBackend(::messageFor, NO_CONNECTION, ::AuthException, request)

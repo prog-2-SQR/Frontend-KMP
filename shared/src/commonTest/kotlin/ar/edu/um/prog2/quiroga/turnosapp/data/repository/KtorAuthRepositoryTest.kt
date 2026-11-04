@@ -1,7 +1,10 @@
 package ar.edu.um.prog2.quiroga.turnosapp.data.repository
 
+import ar.edu.um.prog2.quiroga.turnosapp.data.local.InMemorySessionStore
+import ar.edu.um.prog2.quiroga.turnosapp.data.local.tokenExpiringAt
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.AuthApi
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.HttpClientFactory
+import ar.edu.um.prog2.quiroga.turnosapp.domain.model.AuthSession
 import ar.edu.um.prog2.quiroga.turnosapp.domain.model.Registration
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -15,13 +18,23 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** El backend lo simula MockEngine: responde lo que el test indica y guarda el request para revisarlo. */
 class KtorAuthRepositoryTest {
 
     private var lastRequest: HttpRequestData? = null
     private var lastBody: String = ""
+    private val sessionStore = InMemorySessionStore()
+
+    // Reloj fijo: "ahora" es 1.700.000.000 s desde 1970.
+    private val now = Instant.fromEpochSeconds(1_700_000_000)
+    private val clock = object : Clock {
+        override fun now() = this@KtorAuthRepositoryTest.now
+    }
 
     private fun repository(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): KtorAuthRepository {
         val engine = MockEngine { request ->
@@ -29,7 +42,7 @@ class KtorAuthRepositoryTest {
             lastBody = request.body.toByteArray().decodeToString()
             handler(request)
         }
-        return KtorAuthRepository(AuthApi(HttpClientFactory.create(engine, baseUrl = "http://turnos.test")))
+        return KtorAuthRepository(AuthApi(HttpClientFactory.create(engine, baseUrl = "http://turnos.test")), sessionStore, clock)
     }
 
     private fun MockRequestHandleScope.json(status: HttpStatusCode, body: String) =
@@ -100,5 +113,63 @@ class KtorAuthRepositoryTest {
         val repository = repository { throw IllegalStateException("Connection refused") }
 
         assertEquals(KtorAuthRepository.NO_CONNECTION, repository.register(Registration(login = "juan", password = "clave")).exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun withRememberMeTheSessionIsSaved() = runTest {
+        val repository = repository { json(HttpStatusCode.OK, """{"id_token":"eyJ.token.firma"}""") }
+
+        repository.login("juan", "una-clave", rememberMe = true)
+
+        assertEquals(AuthSession(login = "juan", token = "eyJ.token.firma"), sessionStore.saved)
+    }
+
+    @Test
+    fun withoutRememberMeNothingIsSavedAndAnOldSessionIsForgotten() = runTest {
+        sessionStore.saved = AuthSession(login = "otro", token = "token-viejo")
+        val repository = repository { json(HttpStatusCode.OK, """{"id_token":"eyJ.token.firma"}""") }
+
+        repository.login("juan", "una-clave", rememberMe = false)
+
+        assertNull(sessionStore.saved)
+    }
+
+    @Test
+    fun aFailedLoginKeepsTheSavedSession() = runTest {
+        val saved = AuthSession(login = "juan", token = "token-guardado")
+        sessionStore.saved = saved
+        val repository = repository { respond("", HttpStatusCode.Unauthorized) }
+
+        repository.login("juan", "otra-clave", rememberMe = false)
+
+        assertEquals(saved, sessionStore.saved)
+    }
+
+    @Test
+    fun aSavedSessionIsRestoredWhileItIsValid() {
+        val session = AuthSession(login = "juan", token = tokenExpiringAt(now.epochSeconds + 3600))
+        sessionStore.saved = session
+
+        assertEquals(session, repository { respond("", HttpStatusCode.OK) }.savedSession())
+    }
+
+    @Test
+    fun anExpiredOrUnreadableSessionIsForgotten() {
+        val repository = repository { respond("", HttpStatusCode.OK) }
+        for (token in listOf(tokenExpiringAt(now.epochSeconds - 1), "no-es-un-jwt")) {
+            sessionStore.saved = AuthSession(login = "juan", token = token)
+
+            assertNull(repository.savedSession(), token)
+            assertNull(sessionStore.saved, token)
+        }
+    }
+
+    @Test
+    fun logoutForgetsTheSavedSession() {
+        sessionStore.saved = AuthSession(login = "juan", token = tokenExpiringAt(now.epochSeconds + 3600))
+
+        repository { respond("", HttpStatusCode.OK) }.logout()
+
+        assertNull(sessionStore.saved)
     }
 }

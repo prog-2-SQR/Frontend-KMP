@@ -10,14 +10,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -37,7 +41,8 @@ import ar.edu.um.prog2.quiroga.turnosapp.viewmodel.ReservationDetailViewModel
 
 /**
  * El estado de una reserva, que se actualiza solo mientras está en curso. Cuando la cátedra pide el teléfono, muestra
- * su mensaje y un campo para escribirlo. Solo dibuja el estado del ViewModel y le avisa lo que hace el usuario.
+ * su mensaje y un campo para escribirlo; un turno confirmado se puede cancelar. Solo dibuja el estado del ViewModel y
+ * le avisa lo que hace el usuario.
  */
 class ReservationDetailScreen {
 
@@ -64,12 +69,14 @@ class ReservationDetailScreen {
                     Summary(state.professionalName, reservation)
                     Progress(reservation)
                     if (state.asksForPhone) PhoneForm(state, viewModel)
+                    if (reservation.isCancellable) CancelButton(state, viewModel)
                 }
                 state.isLoading -> CircularProgressIndicator()
                 else -> Unit
             }
             state.errorMessage?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
         }
+        if (state.isConfirmingCancel) CancelDialog(state, viewModel)
     }
 
     @Composable
@@ -124,5 +131,44 @@ class ReservationDetailScreen {
                 Text(if (state.isSubmittingPhone) "Enviando…" else "Enviar teléfono")
             }
         }
+    }
+
+    @Composable
+    private fun CancelButton(state: ReservationDetailUiState, viewModel: ReservationDetailViewModel) {
+        OutlinedButton(
+            onClick = viewModel::onCancelRequested,
+            enabled = state.canCancel,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+        ) { Text("Cancelar turno") }
+    }
+
+    @Composable
+    private fun CancelDialog(state: ReservationDetailUiState, viewModel: ReservationDetailViewModel) {
+        val reservation = state.reservation ?: return
+        AlertDialog(
+            // Mientras se cancela, el diálogo no se cierra tocando afuera: el resultado tiene que verse.
+            onDismissRequest = viewModel::onCancelDismissed,
+            title = { Text("¿Cancelar el turno?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "${state.professionalName}, ${reservation.date.longLabel()} a las ${reservation.startTime.label()}. " +
+                            "El turno queda libre para otra persona.",
+                    )
+                    state.cancelError?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = viewModel::confirmCancel,
+                    enabled = state.canCancel,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) { Text(if (state.isCancelling) "Cancelando…" else "Cancelar turno") }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::onCancelDismissed, enabled = !state.isCancelling) { Text("Volver") }
+            },
+        )
     }
 }

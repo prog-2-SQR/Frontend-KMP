@@ -43,6 +43,10 @@ class FakeAppointmentRepository : AppointmentRepository {
     val myReservationsRequests = mutableListOf<Int>()
     val submittedPhones = mutableListOf<Pair<String, String>>()
 
+    // Si no se configura, la cancelación sale bien y devuelve la reserva cancelada.
+    var cancelResult: Result<Reservation>? = null
+    val cancelled = mutableListOf<String>()
+
     override suspend fun reservation(id: String): Result<Reservation> {
         reservationRequests += id
         return if (reservationResults.size > 1) reservationResults.removeFirst() else reservationResults.first()
@@ -56,6 +60,11 @@ class FakeAppointmentRepository : AppointmentRepository {
     override suspend fun submitPhone(reservationId: String, phoneNumber: String): Result<Reservation> {
         submittedPhones += reservationId to phoneNumber
         return submitPhoneResult ?: Result.success(reservationResults.last().getOrThrow().copy(status = ReservationStatus.PHONE_SUBMITTED, phoneRequested = false))
+    }
+
+    override suspend fun cancel(reservationId: String): Result<Reservation> {
+        cancelled += reservationId
+        return cancelResult ?: Result.success(reservationResults.last().getOrThrow().copy(status = ReservationStatus.CANCELLED))
     }
 
     companion object {

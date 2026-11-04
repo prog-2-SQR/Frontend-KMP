@@ -54,6 +54,7 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.contentNegotiation)
             implementation(libs.ktor.serialization.kotlinxJson)
+            implementation(libs.multiplatformSettings.noArg)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

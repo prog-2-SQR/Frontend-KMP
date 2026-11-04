@@ -58,3 +58,9 @@ data class ReservationPageDto(
 data class SubmitPhoneRequestDto(
     val phoneNumber: String,
 )
+
+/** Body de POST /api/reservations/{id}/cancel. Turnos se lo pasa a la cátedra (anexo §12: hasta 500 caracteres). */
+@Serializable
+data class CancelReservationRequestDto(
+    val reason: String,
+)

@@ -22,16 +22,21 @@ data class ReservationDetailUiState(
     val phone: String = "",
     val phoneError: String? = null,
     val isSubmittingPhone: Boolean = false,
+    /** El usuario tocó "Cancelar turno": la pantalla pide que lo confirme. */
+    val isConfirmingCancel: Boolean = false,
+    val isCancelling: Boolean = false,
+    val cancelError: String? = null,
 ) {
     /** La cátedra pidió el teléfono: la pantalla muestra el campo para escribirlo. */
     val asksForPhone: Boolean get() = reservation?.phoneRequested == true
     val canSubmitPhone: Boolean get() = asksForPhone && !isSubmittingPhone && phone.isNotBlank()
+    val canCancel: Boolean get() = reservation?.isCancellable == true && !isCancelling
 }
 
 /**
  * El estado de una reserva. Mientras está en curso se vuelve a consultar cada pollInterval (Turnos todavía no tiene
  * SSE: recorte aceptado en el plan); cuando termina, deja de consultar. Cuando la cátedra pide el teléfono, lo valida
- * con la misma regla que Turnos y lo manda.
+ * con la misma regla que Turnos y lo manda. Un turno confirmado se puede cancelar, después de confirmarlo.
  */
 class ReservationDetailViewModel(
     private val reservationId: String,
@@ -68,6 +73,24 @@ class ReservationDetailViewModel(
                 .onFailure { error -> _uiState.update { it.copy(isSubmittingPhone = false, phoneError = ErrorMessages.of(error)) } }
             // Después de mandarlo, se sigue consultando hasta el resultado.
             follow()
+        }
+    }
+
+    fun onCancelRequested() = _uiState.update { if (it.canCancel) it.copy(isConfirmingCancel = true, cancelError = null) else it }
+
+    fun onCancelDismissed() = _uiState.update { if (it.isCancelling) it else it.copy(isConfirmingCancel = false) }
+
+    // Turnos la cancela primero en la cátedra: si la cátedra no responde, el turno sigue confirmado y se muestra el error.
+    fun confirmCancel() {
+        val state = _uiState.value
+        if (!state.isConfirmingCancel || !state.canCancel) return
+        _uiState.update { it.copy(isCancelling = true, cancelError = null) }
+        viewModelScope.launch {
+            repository.cancel(reservationId)
+                .onSuccess { reservation ->
+                    _uiState.update { it.copy(isCancelling = false, isConfirmingCancel = false, reservation = reservation) }
+                }
+                .onFailure { error -> _uiState.update { it.copy(isCancelling = false, cancelError = ErrorMessages.of(error)) } }
         }
     }
 

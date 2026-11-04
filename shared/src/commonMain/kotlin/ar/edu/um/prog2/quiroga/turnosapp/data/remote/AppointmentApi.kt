@@ -1,6 +1,7 @@
 package ar.edu.um.prog2.quiroga.turnosapp.data.remote
 
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.AvailabilityDto
+import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.CancelReservationRequestDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ReservationDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.ReservationPageDto
 import ar.edu.um.prog2.quiroga.turnosapp.data.remote.dto.StartReservationRequestDto
@@ -14,7 +15,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kotlinx.datetime.LocalDate
 
-/** Llamadas HTTP a Turnos: turnos libres, reservar, ver las reservas propias y mandar el teléfono. Llevan el JWT de la sesión, que Turnos reenvía al catálogo. */
+/** Llamadas HTTP a Turnos: turnos libres, reservar, ver las reservas propias, mandar el teléfono y cancelar. Llevan el JWT de la sesión, que Turnos reenvía al catálogo. */
 class AppointmentApi(private val client: HttpClient) {
 
     suspend fun availability(token: String, professionalId: Long, date: LocalDate): ApiResult<AvailabilityDto> =
@@ -44,5 +45,11 @@ class AppointmentApi(private val client: HttpClient) {
         client.post("/api/reservations/$id/phone") {
             bearerAuth(token)
             setBody(SubmitPhoneRequestDto(phoneNumber))
+        }.toApiResult { it.body<ReservationDto>() }
+
+    suspend fun cancelReservation(token: String, id: String, reason: String): ApiResult<ReservationDto> =
+        client.post("/api/reservations/$id/cancel") {
+            bearerAuth(token)
+            setBody(CancelReservationRequestDto(reason))
         }.toApiResult { it.body<ReservationDto>() }
 }

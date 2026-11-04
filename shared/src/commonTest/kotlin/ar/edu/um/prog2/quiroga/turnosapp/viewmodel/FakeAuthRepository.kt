@@ -15,6 +15,10 @@ class FakeAuthRepository(
     var lastLogin: Triple<String, String, Boolean>? = null
     var registerCalls = 0
 
+    // La sesión guardada con "Recordarme" que devuelve al arrancar, y cuántas veces se cerró sesión.
+    var savedSession: AuthSession? = null
+    var logoutCalls = 0
+
     // Si no es null, el login espera a que el test lo complete (para ver el estado "cargando").
     var pendingLogin: CompletableDeferred<Unit>? = null
 
@@ -28,5 +32,11 @@ class FakeAuthRepository(
         lastLogin = Triple(username, password, rememberMe)
         pendingLogin?.await()
         return loginResult
+    }
+
+    override fun savedSession(): AuthSession? = savedSession
+
+    override fun logout() {
+        logoutCalls++
     }
 }

@@ -32,6 +32,9 @@ data class Reservation(
 ) {
     /** En curso: todavía puede terminar de cualquier forma. La app sigue consultando su estado. */
     val isPending: Boolean get() = status.isPending
+
+    /** Solo un turno confirmado se puede cancelar (enunciado §5 punto 14). */
+    val isCancellable: Boolean get() = status == ReservationStatus.CONFIRMED
 }
 
 /** Una página de reservas propias. page empieza en 0, como en el backend. */
