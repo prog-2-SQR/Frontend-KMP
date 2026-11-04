@@ -15,11 +15,11 @@ Permite a los usuarios finales registrarse, buscar profesionales y reservar turn
 
 ## Estado
 
-- Registro e inicio de sesión contra Backend-Turnos (JWT).
+- Registro e inicio de sesión contra Backend-Turnos (JWT). Con "Recordarme", la sesión queda guardada en el teléfono y al abrir la app se entra directo mientras el token no haya vencido. "Cerrar sesión" (en Ajustes) vuelve al login y borra la sesión guardada.
 - Búsqueda de profesionales contra Backend-Catalogo: por nombre, categoría, día de atención y solo habilitados, con paginación.
 - Turnos libres y reserva contra Backend-Turnos: tocando un profesional habilitado se abre un calendario (hoy y los próximos 30 días) con los turnos libres del día, separados en mañana y tarde. Al confirmar uno, Turnos pide el bloqueo temporal a la cátedra y lo confirma; la app muestra el estado de la reserva. Si la cuenta no tiene nombre y apellido, el diálogo de confirmación los pide.
-- Mis reservas: las reservas propias paginadas, con el nombre del profesional y el estado. El detalle de cada una consulta su estado cada 3 segundos mientras está en curso (Turnos todavía no tiene SSE). Cuando la cátedra pide el teléfono, muestra su mensaje y un campo para mandarlo, validado con la misma regla que Turnos; si fue rechazado, muestra el motivo. Desde la reserva recién creada se llega con "Ver mi reserva".
-- Pendiente (milestone M8): cancelar una reserva desde la app y cerrar sesión.
+- Mis reservas: las reservas propias paginadas, con el nombre del profesional y el estado. El detalle de cada una consulta su estado cada 3 segundos mientras está en curso (en lugar de SSE: recorte aceptado en el plan). Cuando la cátedra pide el teléfono, muestra su mensaje y un campo para mandarlo, validado con la misma regla que Turnos; si fue rechazado, muestra el motivo. Desde la reserva recién creada se llega con "Ver mi reserva".
+- Cancelar un turno confirmado desde su detalle, con un diálogo de confirmación. Turnos lo cancela primero en la cátedra; si falla, el turno sigue confirmado y se muestra el motivo.
 
 ## Requisitos
 
@@ -87,10 +87,11 @@ ui/format/         textos de fechas y horas en castellano, y conversión de fech
 viewmodel/         un ViewModel por pantalla, con su estado en un StateFlow
 data/remote/       llamadas HTTP con Ktor y sus DTO
 data/repository/   interfaces que usan los ViewModels y sus implementaciones con Ktor
+data/local/        la sesión guardada en el teléfono ("Recordarme"), con multiplatform-settings
 domain/            modelo de la app y reglas de validación
 ```
 
-Arquitectura MVVM: la pantalla observa el estado del ViewModel; el ViewModel pide los datos a un repositorio; solo el repositorio sabe de HTTP.
+Arquitectura MVVM: la pantalla observa el estado del ViewModel; el ViewModel pide los datos a un repositorio; solo el repositorio sabe de HTTP y de la sesión guardada.
 
 Las dependencias se declaran únicamente en el version catalog: [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
 
