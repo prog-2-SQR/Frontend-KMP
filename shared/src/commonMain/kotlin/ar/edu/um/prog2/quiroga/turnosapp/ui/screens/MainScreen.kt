@@ -34,6 +34,8 @@ class MainScreen {
     fun Content(
         darkTheme: Boolean,
         onDarkThemeChange: (Boolean) -> Unit,
+        login: String,
+        onLogout: () -> Unit,
         professionalRepository: ProfessionalRepository,
         appointmentRepository: AppointmentRepository,
     ) {
@@ -65,7 +67,12 @@ class MainScreen {
                 searchGraph(navController, professionalRepository, appointmentRepository)
                 reservationsGraph(navController, professionalRepository, appointmentRepository)
                 composable(AppDestination.Settings.route) {
-                    settingsScreen.Content(darkTheme = darkTheme, onDarkThemeChange = onDarkThemeChange)
+                    settingsScreen.Content(
+                        darkTheme = darkTheme,
+                        onDarkThemeChange = onDarkThemeChange,
+                        login = login,
+                        onLogout = onLogout,
+                    )
                 }
             }
         }
