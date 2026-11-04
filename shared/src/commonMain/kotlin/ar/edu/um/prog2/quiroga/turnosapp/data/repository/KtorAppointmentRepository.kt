@@ -14,7 +14,7 @@ import ar.edu.um.prog2.quiroga.turnosapp.domain.model.ReservationStatus
 import ar.edu.um.prog2.quiroga.turnosapp.domain.validation.PhoneRules
 import kotlinx.datetime.LocalDate
 
-/** Turnos libres, reservas y teléfono contra Turnos con el token de la sesión. Pasa los DTO al modelo y los errores a mensajes. */
+/** Turnos libres, reservas, teléfono y cancelación contra Turnos con el token de la sesión. Pasa los DTO al modelo y los errores a mensajes. */
 class KtorAppointmentRepository(
     private val api: AppointmentApi,
     private val token: String,
@@ -37,6 +37,10 @@ class KtorAppointmentRepository(
     // Se manda tal como lo escribió el usuario: Turnos lo normaliza con la misma regla.
     override suspend fun submitPhone(reservationId: String, phoneNumber: String): Result<Reservation> =
         call { api.submitPhone(token, reservationId, phoneNumber.trim()) }.map(::toReservation)
+
+    // El motivo es fijo: la app no lo pide, pero la cátedra lo guarda y así se sabe de dónde vino.
+    override suspend fun cancel(reservationId: String): Result<Reservation> =
+        call { api.cancelReservation(token, reservationId, CANCEL_REASON) }.map(::toReservation)
 
     private suspend fun <T> call(request: suspend () -> ApiResult<T>): Result<T> =
         callBackend(::messageFor, NO_CONNECTION, ::errorFor, request)
@@ -82,6 +86,8 @@ class KtorAppointmentRepository(
         const val UNAVAILABLE = "El sistema de turnos no responde. Probá en un rato."
         const val RESERVATION_NOT_FOUND = "No encontramos la reserva."
         const val PHONE_NOT_REQUESTED = "La reserva ya no está esperando un teléfono."
+        const val NOT_CANCELLABLE = "Solo se puede cancelar un turno confirmado."
+        const val CANCEL_REASON = "Cancelada por el paciente desde la app"
         const val GENERIC = "Ocurrió un error, probá de nuevo"
 
         // Codes de Turnos: ReservationException, AvailabilityException y VALIDATION_ERROR del handler global.
@@ -103,6 +109,7 @@ class KtorAppointmentRepository(
             "RESERVATION_NOT_FOUND" to RESERVATION_NOT_FOUND,
             "PHONE_NOT_REQUESTED" to PHONE_NOT_REQUESTED,
             "INVALID_PHONE_NUMBER" to PhoneRules.INVALID_PHONE,
+            "RESERVATION_NOT_CANCELLABLE" to NOT_CANCELLABLE,
         )
 
         private val STATUS_MESSAGES = mapOf(

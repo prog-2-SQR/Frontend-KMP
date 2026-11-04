@@ -143,4 +143,64 @@ class ReservationDetailViewModelTest {
         assertFalse(viewModel.uiState.value.canSubmitPhone)
         assertTrue(repository.submittedPhones.isEmpty())
     }
+
+    @Test
+    fun aConfirmedReservationIsCancelledAfterConfirmingIt() {
+        repository.reservationResults = mutableListOf(Result.success(reservation(ReservationStatus.CONFIRMED)))
+        val viewModel = viewModel()
+        assertTrue(viewModel.uiState.value.canCancel)
+
+        viewModel.onCancelRequested()
+        assertTrue(viewModel.uiState.value.isConfirmingCancel)
+        assertTrue(repository.cancelled.isEmpty(), "pedir que confirme todavía no cancela")
+        viewModel.confirmCancel()
+
+        assertEquals(listOf("proceso-1"), repository.cancelled)
+        val state = viewModel.uiState.value
+        assertEquals(ReservationStatus.CANCELLED, state.reservation?.status)
+        assertFalse(state.isConfirmingCancel)
+        assertFalse(state.canCancel)
+    }
+
+    @Test
+    fun aFailedCancellationKeepsTheTurnAndShowsWhy() {
+        repository.reservationResults = mutableListOf(Result.success(reservation(ReservationStatus.CONFIRMED)))
+        repository.cancelResult = Result.failure(AppointmentException("El sistema de turnos no responde. Probá en un rato."))
+        val viewModel = viewModel()
+
+        viewModel.onCancelRequested()
+        viewModel.confirmCancel()
+
+        val state = viewModel.uiState.value
+        assertEquals("El sistema de turnos no responde. Probá en un rato.", state.cancelError)
+        assertEquals(ReservationStatus.CONFIRMED, state.reservation?.status)
+        assertTrue(state.isConfirmingCancel, "el diálogo sigue abierto para reintentar o volver")
+        assertFalse(state.isCancelling)
+    }
+
+    @Test
+    fun goingBackFromTheDialogDoesNotCancel() {
+        repository.reservationResults = mutableListOf(Result.success(reservation(ReservationStatus.CONFIRMED)))
+        val viewModel = viewModel()
+
+        viewModel.onCancelRequested()
+        viewModel.onCancelDismissed()
+        viewModel.confirmCancel()
+
+        assertFalse(viewModel.uiState.value.isConfirmingCancel)
+        assertTrue(repository.cancelled.isEmpty())
+    }
+
+    @Test
+    fun onlyAConfirmedReservationCanBeCancelled() {
+        repository.reservationResults = mutableListOf(Result.success(reservation(ReservationStatus.WAITING_FOR_PHONE)))
+        val viewModel = viewModel()
+
+        viewModel.onCancelRequested()
+        viewModel.confirmCancel()
+
+        assertFalse(viewModel.uiState.value.canCancel)
+        assertFalse(viewModel.uiState.value.isConfirmingCancel)
+        assertTrue(repository.cancelled.isEmpty())
+    }
 }

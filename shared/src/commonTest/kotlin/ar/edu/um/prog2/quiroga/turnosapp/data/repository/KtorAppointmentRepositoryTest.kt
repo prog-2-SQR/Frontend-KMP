@@ -250,4 +250,24 @@ class KtorAppointmentRepositoryTest {
             assertEquals(message, repository.submitPhone("7b6f2c1e", "123").exceptionOrNull()?.message, code)
         }
     }
+
+    @Test
+    fun cancellingSendsTheReasonToItsReservation() = runTest {
+        val repository = repository { json(HttpStatusCode.OK, waitingForPhone.replace("WAITING_FOR_PHONE", "CANCELLED")) }
+
+        val reservation = repository.cancel("7b6f2c1e").getOrThrow()
+
+        assertEquals(HttpMethod.Post, lastRequest!!.method)
+        assertEquals("/api/reservations/7b6f2c1e/cancel", lastRequest!!.url.encodedPath)
+        assertEquals("Bearer eyJ.token.firma", lastRequest!!.headers[HttpHeaders.Authorization])
+        assertEquals("""{"reason":"${KtorAppointmentRepository.CANCEL_REASON}"}""", lastRequest!!.body.toByteArray().decodeToString())
+        assertEquals(ReservationStatus.CANCELLED, reservation.status)
+    }
+
+    @Test
+    fun aReservationThatIsNotConfirmedCannotBeCancelled() = runTest {
+        val repository = repository { problem(HttpStatusCode.Conflict, "RESERVATION_NOT_CANCELLABLE") }
+
+        assertEquals(KtorAppointmentRepository.NOT_CANCELLABLE, repository.cancel("7b6f2c1e").exceptionOrNull()?.message)
+    }
 }
