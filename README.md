@@ -57,6 +57,8 @@ La app usa los dos servicios ([`ApiConfig`](shared/src/commonMain/kotlin/ar/edu/
 ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Djava.net.preferIPv4Stack=true"
 ```
 
+También se pueden levantar los dos juntos, con sus bases, con el compose del repositorio [Documentacion](https://github.com/prog-2-SQR/Documentacion#levantar-toda-la-solución). Así no hace falta `preferIPv4Stack`, porque los puertos los publica Docker.
+
 El JWT que devuelve Turnos al iniciar sesión sirve también para el catálogo: los dos servicios comparten el secreto `JWT_BASE64_SECRET`.
 
 ## Tests
@@ -106,6 +108,12 @@ Las dependencias se declaran únicamente en el version catalog: [`gradle/libs.ve
 | Gradle (wrapper) | 9.5.1 |
 | JDK para Gradle | 21 |
 | Android | compileSdk 37 · minSdk 24 |
+
+## Documentación
+
+- [SPEC](docs/SPEC.md): qué hace la app, sus pantallas y lo que usa de cada backend.
+- [PLAN](docs/PLAN.md): arquitectura MVVM, etapas, decisiones y estrategia de pruebas.
+- [TASKS](docs/TASKS.md): las issues de cada etapa con su PR.
 
 ## Repositorios del proyecto
 
